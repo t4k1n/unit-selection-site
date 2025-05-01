@@ -41,43 +41,69 @@
 </head>
 <body>
   <h1>سامانه انتخاب واحد هوشمند</h1>
-  <p>فایل دروس پاس‌شده را انتخاب کنید (فقط CSV فعلاً):</p>
+  <form>
+    <label>فایل دروس پاس‌شده (CSV):</label><br>
+    <input type="file" id="passedFile" accept=".csv"><br>
 
-  <input type="file" id="csvFile" accept=".csv"><br>
+    <label>فایل دروس ارائه‌شده (CSV):</label><br>
+    <input type="file" id="offeredFile" accept=".csv"><br>
+  </form>
 
-  <div id="tableContainer"></div>
+  <div id="result"></div>
 
   <script>
-    document.getElementById('csvFile').addEventListener('change', function (e) {
+    let passedCourses = [];
+    let offeredCourses = [];
+
+    document.getElementById('passedFile').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
-
       Papa.parse(file, {
         header: true,
         complete: function(results) {
-          const data = results.data;
-          let html = "<table><tr>";
-
-          // جدول سرستون‌ها
-          for (let key in data[0]) {
-            html += `<th>${key}</th>`;
-          }
-          html += "</tr>";
-
-          // ردیف‌ها
-          data.forEach(row => {
-            html += "<tr>";
-            for (let key in row) {
-              html += `<td>${row[key]}</td>`;
-            }
-            html += "</tr>";
-          });
-
-          html += "</table>";
-          document.getElementById("tableContainer").innerHTML = html;
+          passedCourses = results.data.map(row => row['کد درس']);
+          checkAndCompare();
         }
       });
     });
+
+    document.getElementById('offeredFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      Papa.parse(file, {
+        header: true,
+        complete: function(results) {
+          offeredCourses = results.data;
+          checkAndCompare();
+        }
+      });
+    });
+
+    function checkAndCompare() {
+      if (passedCourses.length === 0 || offeredCourses.length === 0) return;
+
+      const suggestions = offeredCourses.filter(course =>
+        !passedCourses.includes(course['کد درس'])
+      );
+
+      let html = "<h2>دروس پیشنهادی برای انتخاب واحد:</h2>";
+      if (suggestions.length === 0) {
+        html += "<p>همه‌ی دروس ارائه‌شده قبلاً پاس شده‌اند!</p>";
+      } else {
+        html += "<table><tr><th>کد درس</th><th>نام درس</th><th>نام استاد</th><th>زمان</th></tr>";
+        suggestions.forEach(course => {
+          html += `<tr>
+            <td>${course['کد درس']}</td>
+            <td>${course['نام درس']}</td>
+            <td>${course['نام استاد']}</td>
+            <td>${course['زمان']}</td>
+          </tr>`;
+        });
+        html += "</table>";
+      }
+
+      document.getElementById("result").innerHTML = html;
+    }
   </script>
 </body>
 </html>
